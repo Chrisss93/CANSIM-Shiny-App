@@ -47,7 +47,7 @@ shinyServer(function(input, output, session) {
   scrape_data <- reactive({
     withProgress(session, min = 1, max = 30, {
       setProgress(message = "Please wait while we retrieve the most current data from Statistics Canada.")
-      for(i in 1:30) { setProgress(value = i)}
+      for(i in 1:30) {setProgress(value = i)}
       download.file(fileUrl, temp)
       base <- read.csv(unz(temp, "02020802-eng.csv"))
       base <- small_cleaning(base)
@@ -95,7 +95,8 @@ shinyServer(function(input, output, session) {
     gg_statement + gg_layers +
       ggtitle(paste(input$pop, input$pop2, input$geo, sep = "-")) +
       scale_x_continuous(breaks = seq(min(df$Year, na.rm = TRUE), max(df$Year, na.rm = TRUE), 5)) + 
-      scale_y_continuous(breaks = seq(0, max(df$Value, na.rm=TRUE), 0.02), labels = percent)
+      scale_y_continuous(breaks = seq(0, max(df$Value, na.rm=TRUE), 0.02), labels = percent) + 
+      coord_cartesian(xlim = input$range)
   })
   
   output$plot2 <- renderPlot({
@@ -105,7 +106,7 @@ shinyServer(function(input, output, session) {
     gg_statement + gg_layers + ylab("Poverty count (x 1,000)") + 
       ggtitle(paste(input$pop, input$pop2, input$geo, sep = "-")) + 
       scale_x_continuous(breaks = seq(min(df$Year, na.rm = TRUE), max(df$Year, na.rm = TRUE), 5)) + 
-      scale_y_continuous(labels = comma)
+      scale_y_continuous(labels = comma) + coord_cartesian(xlim = input$range)
   })
   # I'm making the table in a reactive({}) rather than renderTable({}) function, because I want write.csv()
   # functionality for the table, and that cannot be done on the output object directly.
@@ -117,7 +118,12 @@ shinyServer(function(input, output, session) {
     tab <- dcast(df, df[, input$var1] ~ df[, input$var2], value.var = "Value", function(x){mean(x, na.rm=T)})
     colnames(tab)[1] <- names(df[input$var1])
     if(unique(df$Statistic) == "Percentage of persons in low income") {
-      tab <- data.frame(tab[1], apply(tab[,-1], 2, function(x) {percent(x/100)}), check.names = FALSE)
+      tab <- data.frame(tab[1], apply(tab[,-1], 2, function(x) {
+        out <- percent(x/100)
+        if (any(out == "NaN%") == TRUE) {
+          out[out == "NaN%"] <- NA }
+        return(out)
+      }), check.names = FALSE)
       }
     tab
     })
