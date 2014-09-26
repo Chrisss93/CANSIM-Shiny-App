@@ -1,4 +1,7 @@
 library(shiny)
+if(!"ShinyIncubator" %in% installed.packages()[,"Package"]) {
+  install_github("shiny-incubator", "rstudio")
+}
 
 shinyUI(
   navbarPage("CANSM 202-0802 Interactive Visualization",
@@ -24,7 +27,7 @@ shinyUI(
                       helpText("* Note: For simplicity, the Population parameter only captures age and gender categories.
                For similar reasons, the Geography parameter only captures provincial identifiers.")), 
                     mainPanel(
-                      progressInit(),
+                      shinyIncubator::progressInit(),
                       tabsetPanel(
                         tabPanel("% in low income", plotOutput("plot1")),
                         tabPanel("# in low income", plotOutput("plot2")))))),
